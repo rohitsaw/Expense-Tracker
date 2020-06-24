@@ -15,16 +15,17 @@ class _NewTransactionState extends State<NewTransaction> {
   var _selectedDate = DateTime.now();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
+  String _category;
 
   void _submitData() {
     final title = _titleController.text;
     final amount = _amountController.text;
 
-    if (title.isEmpty || amount.isEmpty) {
+    if (title.isEmpty || amount.isEmpty || (_category == null)) {
       return;
     }
     try {
-      widget.addTx(title, int.parse(amount), _selectedDate);
+      widget.addTx(title, int.parse(amount), _selectedDate, _category);
       Navigator.of(context).pop();
     } catch (e) {
       return;
@@ -54,7 +55,7 @@ class _NewTransactionState extends State<NewTransaction> {
       child: Container(
         padding: EdgeInsets.all(10),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          //crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
             TextField(
               decoration: InputDecoration(labelText: 'Title'),
@@ -74,24 +75,60 @@ class _NewTransactionState extends State<NewTransaction> {
               children: <Widget>[
                 Text(
                     'Selected date :- ${DateFormat('d/M/y').format(_selectedDate)}'),
-                FlatButton(
-                  textColor: Colors.blue,
-                  child: Text(
-                    'Change Date',
-                    textAlign: TextAlign.start,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                Container(
+                  padding: EdgeInsets.only(top: 5),
+                  child: FlatButton(
+                    textColor: Colors.blue,
+                    child: Text(
+                      'Change Date',
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
+                    onPressed: _presentDatePicker,
                   ),
-                  onPressed: _presentDatePicker,
                 ),
               ],
             )),
-            RaisedButton(
-              child: Text('Add Transaction'),
-              color: Colors.purple,
-              textColor: Colors.white,
-              onPressed: _submitData,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Container(
+                  child: DropdownButton<String>(
+                      value: _category,
+                      hint: Text('Select Category'),
+                      icon: Icon(Icons.arrow_downward),
+                      elevation: 16,
+                      style: TextStyle(
+                        color: Colors.deepPurple,
+                      ),
+                      underline: Container(
+                        height: 2,
+                        color: Colors.deepPurple,
+                      ),
+                      items:
+                          <String>['c1', 'c2', 'c3', 'c4'].map((String each) {
+                        return DropdownMenuItem<String>(
+                          value: each,
+                          child: Text(each),
+                        );
+                      }).toList(),
+                      onChanged: (String newValue) {
+                        setState(() {
+                          _category = newValue;
+                        });
+                      }),
+                ),
+                Container(
+                  child: RaisedButton(
+                    child: Text('Add Transaction'),
+                    color: Colors.purple,
+                    textColor: Colors.white,
+                    onPressed: _submitData,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

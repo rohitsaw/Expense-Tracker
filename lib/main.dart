@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 // importing other widgets
@@ -6,6 +7,7 @@ import './widgets/chart.dart';
 import './widgets/new_transaction.dart';
 import './models/transaction.dart';
 import './widgets/transaction_list.dart';
+import './screens/category_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +28,12 @@ class MyApp extends StatelessWidget {
         accentColor: Colors.amber,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      //home: MyHomePage(title: 'Flutter Demo Home Page'),
+      initialRoute: '/',
+      routes: {
+        '/': (ctx) => MyHomePage(title: 'Flutter Demo Home Page'),
+        CategoryScreen.routeName: (ctx) => CategoryScreen(),
+      },
     );
   }
 }
@@ -41,13 +48,15 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  ScrollController _scrollController = ScrollController();
   List<Transaction> _allTransaction = [];
   List<Map<String, int>> _lastSevenDays = [];
-  DateTime _today = DateTime.now().subtract(
-    Duration(days: 7),
-  );
-
+  DateTime _today = DateTime.now().subtract(Duration(days: 7));
   int _totalLastSevenDays = 0;
+
+  Map<String, int> _noOfTransaction;
+  Map<String, int> _total;
+  Set<String> _categories;
 
   _MyHomePageState() {
     int test = _today.weekday;
@@ -57,6 +66,27 @@ class _MyHomePageState extends State<MyHomePage> {
     for (int i = 1; i <= test; i++) {
       _lastSevenDays.add({'day': i, 'amount': 0});
     }
+  }
+
+  void routeArgs() {
+    _total.clear();
+    _categories.clear();
+    _noOfTransaction.clear();
+
+    _allTransaction.forEach((element) {
+      try {
+        _noOfTransaction[element.category] += 1;
+      } catch (e) {
+        _noOfTransaction[element.category] = 1;
+      }
+
+      try {
+        _total[element.category] += element.amount;
+      } catch (e) {
+        _total[element.category] = element.amount;
+      }
+      _categories.add(element.category);
+    });
   }
 
   void _changeLastSevenDay() {
@@ -99,12 +129,18 @@ class _MyHomePageState extends State<MyHomePage> {
     return;
   }
 
-  void _addTransaction(String title, int amount, DateTime date) {
+  void _addTransaction(
+      String title, int amount, DateTime date, String category) {
     setState(() {
       _allTransaction.add(
-        Transaction(title: title, amount: amount, date: date),
+        Transaction(
+            title: title, amount: amount, date: date, category: category),
       );
       _changeLastSevenDay();
+    });
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _scrollController.animateTo(_scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     });
     return;
   }
@@ -129,6 +165,22 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     final appBar = AppBar(
       title: Text(widget.title),
+      actions: <Widget>[
+        FlatButton.icon(
+          textColor: Colors.tealAccent,
+          onPressed: () {
+            routeArgs();
+            Navigator.of(context)
+                .pushNamed(CategoryScreen.routeName, arguments: {
+              'categories': _categories,
+              'total': _total,
+              'noOfTransaction': _noOfTransaction,
+            });
+          },
+          label: Text('Details'),
+          icon: Icon(Icons.assignment),
+        ),
+      ],
     );
 
     final availHeight = (MediaQuery.of(context).size.height -
@@ -149,7 +201,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 Container(
                   height: (availHeight * 0.7),
-                  child: TransactionList(_allTransaction, _deleteTransaction),
+                  child: TransactionList(
+                      _allTransaction, _deleteTransaction, _scrollController),
                 ),
               ],
             ),

@@ -7,7 +7,9 @@ class TransactionList extends StatelessWidget {
   final List<Transaction> transactions;
   final Function deleteTx;
 
-  TransactionList(this.transactions, this.deleteTx);
+  final scrollController;
+
+  TransactionList(this.transactions, this.deleteTx, this.scrollController);
 
   void _startDeleteTx(BuildContext ctx, int index) {
     showDialog(
@@ -50,6 +52,8 @@ class TransactionList extends StatelessWidget {
             ),
           )
         : ListView.builder(
+            //reverse: true,
+            controller: scrollController,
             itemBuilder: (ctx, index) {
               return Card(
                 elevation: 5,
@@ -57,29 +61,49 @@ class TransactionList extends StatelessWidget {
                   vertical: 8,
                   horizontal: 5,
                 ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    radius: 30,
-                    child: Padding(
-                      padding: EdgeInsets.all(6),
-                      child: FittedBox(
-                        child: Text('\u{20B9}${transactions[index].amount}'),
+                child: InkWell(
+                  onTap: () {},
+                  splashColor: Colors.black54,
+                  child: ListTile(
+                    isThreeLine: true,
+                    leading: CircleAvatar(
+                      radius: 30,
+                      child: Padding(
+                        padding: EdgeInsets.all(6),
+                        child: FittedBox(
+                          child: Text('\u{20B9}${transactions[index].amount}'),
+                        ),
                       ),
                     ),
-                  ),
-                  title: Text(
-                    '${transactions[index].title}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                    title: Text(
+                      '${transactions[index].category}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    '${DateFormat.yMMMd().format(transactions[index].date)}',
-                  ),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    color: Colors.red,
-                    onPressed: () => _startDeleteTx(context, index),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          '${transactions[index].title}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            '${DateFormat.yMMMd().format(transactions[index].date)}',
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete),
+                      color: Colors.red,
+                      onPressed: () => _startDeleteTx(context, index),
+                    ),
                   ),
                 ),
               );
