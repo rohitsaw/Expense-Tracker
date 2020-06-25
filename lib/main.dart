@@ -7,6 +7,9 @@ import './widgets/chart.dart';
 import './widgets/new_transaction.dart';
 import './models/transaction.dart';
 import './widgets/transaction_list.dart';
+import './widgets/new_category.dart';
+
+// import other screen
 import './screens/category_screen.dart';
 
 void main() {
@@ -53,10 +56,11 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, int>> _lastSevenDays = [];
   DateTime _today = DateTime.now().subtract(Duration(days: 7));
   int _totalLastSevenDays = 0;
+  List<String> _categories = [];
 
-  Map<String, int> _noOfTransaction;
-  Map<String, int> _total;
-  Set<String> _categories;
+  Map<String, int> _noOfTransaction = {};
+  Map<String, int> _total = {};
+  //Set<String> _categories;
 
   _MyHomePageState() {
     int test = _today.weekday;
@@ -68,25 +72,25 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void routeArgs() {
-    _total.clear();
-    _categories.clear();
-    _noOfTransaction.clear();
+  void _addCategory(String cat) {
+    _categories.add(cat);
+    _noOfTransaction[cat] = 0;
+    _total[cat] = 0;
+    Navigator.of(context).pop();
+  }
 
-    _allTransaction.forEach((element) {
-      try {
-        _noOfTransaction[element.category] += 1;
-      } catch (e) {
-        _noOfTransaction[element.category] = 1;
+  void _deleteCat(String category) {
+    print("deleting $category");
+    _allTransaction.removeWhere((element) {
+      if (element.category == category) {
+        _total[category] -= element.amount;
+        _noOfTransaction[category] -= 1;
+        return true;
+      } else {
+        return false;
       }
-
-      try {
-        _total[element.category] += element.amount;
-      } catch (e) {
-        _total[element.category] = element.amount;
-      }
-      _categories.add(element.category);
     });
+    _categories.removeWhere((element) => element == category);
   }
 
   void _changeLastSevenDay() {
@@ -136,6 +140,8 @@ class _MyHomePageState extends State<MyHomePage> {
         Transaction(
             title: title, amount: amount, date: date, category: category),
       );
+      _total[category] += amount;
+      _noOfTransaction[category] += 1;
       _changeLastSevenDay();
     });
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -148,7 +154,11 @@ class _MyHomePageState extends State<MyHomePage> {
   void _deleteTransaction(int index) {
     //showDialog(context: null)
     setState(() {
+      String category = _allTransaction[index].category;
+      int amount = _allTransaction[index].amount;
       _allTransaction.removeAt(index);
+      _total[category] -= amount;
+      _noOfTransaction[category] -= 1;
       _changeLastSevenDay();
     });
     return;
@@ -157,28 +167,32 @@ class _MyHomePageState extends State<MyHomePage> {
   void _startAddNewTransaction(BuildContext cntx) {
     showModalBottomSheet(
       context: cntx,
-      builder: (_) => NewTransaction(_addTransaction),
+      builder: (_) => (_categories.length != 0)
+          ? NewTransaction(_addTransaction, _categories)
+          : NewCategory(_addCategory, () {}),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    print("build main");
     final appBar = AppBar(
       title: Text(widget.title),
       actions: <Widget>[
         FlatButton.icon(
           textColor: Colors.tealAccent,
           onPressed: () {
-            routeArgs();
             Navigator.of(context)
                 .pushNamed(CategoryScreen.routeName, arguments: {
               'categories': _categories,
               'total': _total,
               'noOfTransaction': _noOfTransaction,
-            });
+              'addCat': _addCategory,
+              'deleteCat': _deleteCat,
+            }).then((value) => setState(() {}));
           },
           label: Text('Details'),
-          icon: Icon(Icons.assignment),
+          icon: Icon(Icons.add_circle_outline),
         ),
       ],
     );

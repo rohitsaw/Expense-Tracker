@@ -4,8 +4,9 @@ import 'package:intl/intl.dart';
 
 class NewTransaction extends StatefulWidget {
   final Function addTx;
+  final List<String> categories;
 
-  NewTransaction(this.addTx);
+  NewTransaction(this.addTx, this.categories);
 
   @override
   _NewTransactionState createState() => _NewTransactionState();
@@ -107,8 +108,7 @@ class _NewTransactionState extends State<NewTransaction> {
                         height: 2,
                         color: Colors.deepPurple,
                       ),
-                      items:
-                          <String>['c1', 'c2', 'c3', 'c4'].map((String each) {
+                      items: (widget.categories).map((String each) {
                         return DropdownMenuItem<String>(
                           value: each,
                           child: Text(each),
