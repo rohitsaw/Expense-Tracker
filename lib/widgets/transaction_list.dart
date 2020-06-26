@@ -11,7 +11,7 @@ class TransactionList extends StatelessWidget {
 
   TransactionList(this.transactions, this.deleteTx, this.scrollController);
 
-  void _startDeleteTx(BuildContext ctx, int index) {
+  void _startDeleteTx(BuildContext ctx, int id) {
     showDialog(
         context: ctx,
         barrierDismissible: false,
@@ -23,7 +23,7 @@ class TransactionList extends StatelessWidget {
               FlatButton(
                 child: Text('Yes'),
                 onPressed: () {
-                  deleteTx(index);
+                  deleteTx(id);
                   Navigator.of(ctx).pop();
                 },
               ),
@@ -102,7 +102,8 @@ class TransactionList extends StatelessWidget {
                     trailing: IconButton(
                       icon: Icon(Icons.delete),
                       color: Colors.red,
-                      onPressed: () => _startDeleteTx(context, index),
+                      onPressed: () =>
+                          _startDeleteTx(context, transactions[index].id),
                     ),
                   ),
                 ),

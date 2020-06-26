@@ -73,24 +73,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _addCategory(String cat) {
+    print('add category from main page $cat');
     _categories.add(cat);
     _noOfTransaction[cat] = 0;
     _total[cat] = 0;
     Navigator.of(context).pop();
-  }
-
-  void _deleteCat(String category) {
-    print("deleting $category");
-    _allTransaction.removeWhere((element) {
-      if (element.category == category) {
-        _total[category] -= element.amount;
-        _noOfTransaction[category] -= 1;
-        return true;
-      } else {
-        return false;
-      }
-    });
-    _categories.removeWhere((element) => element == category);
   }
 
   void _changeLastSevenDay() {
@@ -151,8 +138,8 @@ class _MyHomePageState extends State<MyHomePage> {
     return;
   }
 
-  void _deleteTransaction(int index) {
-    //showDialog(context: null)
+  void _deleteTransaction(int id) {
+    int index = _allTransaction.indexWhere((element) => element.id == id);
     setState(() {
       String category = _allTransaction[index].category;
       int amount = _allTransaction[index].amount;
@@ -175,7 +162,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    print("build main");
+    print("build main page");
     final appBar = AppBar(
       title: Text(widget.title),
       actions: <Widget>[
@@ -184,11 +171,10 @@ class _MyHomePageState extends State<MyHomePage> {
           onPressed: () {
             Navigator.of(context)
                 .pushNamed(CategoryScreen.routeName, arguments: {
+              'alltransactions': _allTransaction,
               'categories': _categories,
               'total': _total,
               'noOfTransaction': _noOfTransaction,
-              'addCat': _addCategory,
-              'deleteCat': _deleteCat,
             }).then((value) => setState(() {}));
           },
           label: Text('Details'),

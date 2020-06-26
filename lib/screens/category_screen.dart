@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/transaction.dart';
+
 import '../widgets/new_category.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -11,22 +13,74 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
   Map<String, bool> flag = {};
-  bool switchbutton = true;
+  Map<String, int> total = {};
+  Map<String, int> noOfTransactions = {};
+  List<String> localCategories = [];
+  List<Transaction> allTransactions = [];
+  bool _loadData = false;
+
+  @override
+  void didChangeDependencies() {
+    if (!_loadData) {
+      print('load category data');
+      final routeArgs =
+          ModalRoute.of(context).settings.arguments as Map<String, Object>;
+
+      allTransactions = routeArgs['alltransactions'] as List<Transaction>;
+      total = routeArgs['total'] as Map<String, int>;
+      noOfTransactions = routeArgs['noOfTransaction'] as Map<String, int>;
+      localCategories = (routeArgs['categories'] as List<String>);
+      localCategories.forEach((element) {
+        flag[element] = false;
+      });
+    }
+    _loadData = true;
+    super.didChangeDependencies();
+  }
 
   void _updateScreen() {
     setState(() {});
   }
 
-  void selectAll(Map<String, bool> flag, bool nvalue) {
-    flag.forEach((key, value) {
-      flag[key] = nvalue;
-    });
+  void selectAll() {
+    if (flag.containsValue(false)) {
+      flag.forEach((key, value) {
+        flag[key] = true;
+      });
+    } else {
+      flag.forEach((key, value) {
+        flag[key] = false;
+      });
+    }
   }
 
-  void _deletedSelected(Function dx) {
+  void _addCategory(String cat) {
+    print('adding category $cat');
+    flag[cat] = false;
+    localCategories.add(cat);
+    noOfTransactions[cat] = 0;
+    total[cat] = 0;
+    Navigator.of(context).pop();
+  }
+
+  void _deleteCat(String category) {
+    print("deleting category $category");
+    allTransactions.removeWhere((element) {
+      if (element.category == category) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+    localCategories.removeWhere((element) => element == category);
+    total.removeWhere((key, value) => key == category);
+    noOfTransactions.removeWhere((key, value) => key == category);
+  }
+
+  void _deletedSelected() {
     flag.removeWhere((key, value) {
       if (value == true) {
-        dx(key);
+        _deleteCat(key);
         return true;
       } else {
         return false;
@@ -34,7 +88,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     });
   }
 
-  void _startdeleteSelected(Function dx, BuildContext ctx) {
+  void _startdeleteSelected(BuildContext ctx) {
     showDialog(
         context: ctx,
         barrierDismissible: false,
@@ -48,7 +102,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               FlatButton(
                 child: Text("Yes"),
                 onPressed: () {
-                  _deletedSelected(dx);
+                  _deletedSelected();
                   Navigator.of(ctx).pop();
                   _updateScreen();
                 },
@@ -66,43 +120,37 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final routeArgs =
-        ModalRoute.of(context).settings.arguments as Map<String, Object>;
+    Widget appBar = AppBar(
+      title: Text('Overview'),
+      actions: <Widget>[
+        FlatButton.icon(
+            onPressed: () {
+              setState(() {
+                selectAll();
+              });
+            },
+            icon: Container(
+              decoration: BoxDecoration(
+                color: Colors.white54,
+              ),
+              child: Icon(
+                Icons.select_all,
+                color: Colors.black,
+              ),
+            ),
+            label: Text('')),
+        FlatButton.icon(
+            onPressed: () {
+              _startdeleteSelected(context);
+            },
+            icon: Icon(Icons.delete),
+            label: Text(''))
+      ],
+    );
 
-    Map<String, int> total = routeArgs['total'] as Map<String, int>;
-    Map<String, int> noOfTransactions =
-        routeArgs['noOfTransaction'] as Map<String, int>;
-    List<String> localCategories = (routeArgs['categories'] as List<String>);
-    Function _addCat = routeArgs['addCat'];
-    Function _deleteCat = routeArgs['deleteCat'];
-
-    localCategories.forEach((element) {
-      if (flag[element] == null) flag[element] = false;
-    });
-
-    print(flag);
-
+    print('build category page');
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Overview'),
-        actions: <Widget>[
-          FlatButton.icon(
-              onPressed: () {
-                setState(() {
-                  selectAll(flag, switchbutton);
-                  switchbutton = !switchbutton;
-                });
-              },
-              icon: Icon(Icons.select_all),
-              label: Text('')),
-          FlatButton.icon(
-              onPressed: () {
-                _startdeleteSelected(_deleteCat, context);
-              },
-              icon: Icon(Icons.delete),
-              label: Text(''))
-        ],
-      ),
+      appBar: appBar,
       body: Container(
         padding: EdgeInsets.only(top: 10, left: 10, right: 10),
         child: GridView.builder(
@@ -178,7 +226,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           onPressed: () => showModalBottomSheet(
                 context: context,
                 builder: (_) {
-                  return NewCategory(_addCat, _updateScreen);
+                  return NewCategory(_addCategory, _updateScreen);
                 },
               )),
     );
