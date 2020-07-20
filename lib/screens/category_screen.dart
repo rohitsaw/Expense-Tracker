@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+// import 'package:personal_expenses/main.dart';
+//import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
 
-import '../models/transaction.dart';
+import '../providers/transaction.dart';
 
 import '../widgets/new_category.dart';
+import '../screens/each_category.dart';
 
 class CategoryScreen extends StatefulWidget {
-  static const routeName = '/category';
+  static const routeName = '/categoryScreen';
 
   @override
   _CategoryScreenState createState() => _CategoryScreenState();
@@ -13,74 +17,34 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
   Map<String, bool> flag = {};
-  Map<String, int> total = {};
-  Map<String, int> noOfTransactions = {};
-  List<String> localCategories = [];
-  List<Transaction> allTransactions = [];
-  bool _loadData = false;
+  // bool _loadData = false;
+  int _noOfSelected = 0;
 
-  @override
-  void didChangeDependencies() {
-    if (!_loadData) {
-      print('load category data');
-      final routeArgs =
-          ModalRoute.of(context).settings.arguments as Map<String, Object>;
-
-      allTransactions = routeArgs['alltransactions'] as List<Transaction>;
-      total = routeArgs['total'] as Map<String, int>;
-      noOfTransactions = routeArgs['noOfTransaction'] as Map<String, int>;
-      localCategories = (routeArgs['categories'] as List<String>);
-      localCategories.forEach((element) {
-        flag[element] = false;
-      });
-    }
-    _loadData = true;
-    super.didChangeDependencies();
-  }
-
-  void _updateScreen() {
-    setState(() {});
-  }
+  dynamic categoryProvider;
+  dynamic transactionProvider;
+  Map<String, Map<String, int>> categoryWiseTransaction;
 
   void selectAll() {
     if (flag.containsValue(false)) {
       flag.forEach((key, value) {
         flag[key] = true;
       });
+      _noOfSelected = flag.length;
     } else {
       flag.forEach((key, value) {
         flag[key] = false;
       });
+      _noOfSelected = 0;
     }
+    setState(() {});
   }
 
-  void _addCategory(String cat) {
-    print('adding category $cat');
-    flag[cat] = false;
-    localCategories.add(cat);
-    noOfTransactions[cat] = 0;
-    total[cat] = 0;
-    Navigator.of(context).pop();
-  }
-
-  void _deleteCat(String category) {
-    print("deleting category $category");
-    allTransactions.removeWhere((element) {
-      if (element.category == category) {
-        return true;
-      } else {
-        return false;
-      }
-    });
-    localCategories.removeWhere((element) => element == category);
-    total.removeWhere((key, value) => key == category);
-    noOfTransactions.removeWhere((key, value) => key == category);
-  }
-
-  void _deletedSelected() {
+  void _deletedSelected(Function deleteCat, Function deleteTransaction) {
     flag.removeWhere((key, value) {
       if (value == true) {
-        _deleteCat(key);
+        deleteCat(key);
+        deleteTransaction(key);
+        _noOfSelected -= 1;
         return true;
       } else {
         return false;
@@ -88,7 +52,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
     });
   }
 
-  void _startdeleteSelected(BuildContext ctx) {
+  void _startdeleteSelected(
+      BuildContext ctx, Function deleteCat, Function deleteTransaction) {
+    if (!flag.containsValue(true)) {
+      Scaffold.of(ctx).removeCurrentSnackBar();
+      Scaffold.of(ctx).showSnackBar(
+        SnackBar(
+            duration: Duration(milliseconds: 700),
+            content: Text('long press on category to select')),
+      );
+      return;
+    }
     showDialog(
         context: ctx,
         barrierDismissible: false,
@@ -102,9 +76,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
               FlatButton(
                 child: Text("Yes"),
                 onPressed: () {
-                  _deletedSelected();
+                  _deletedSelected(deleteCat, deleteTransaction);
                   Navigator.of(ctx).pop();
-                  _updateScreen();
+                  setState(() {});
                 },
               ),
               FlatButton(
@@ -120,14 +94,152 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Widget appBar = AppBar(
-      title: Text('Overview'),
+    categoryProvider = Provider.of<CategoryListProvider>(context, listen: true);
+    transactionProvider =
+        Provider.of<TransactionListProvider>(context, listen: false);
+    final List<String> allCategories = categoryProvider.allCategory;
+    categoryWiseTransaction = transactionProvider.categoryWiseTransactions();
+    allCategories.forEach((element) {
+      if (flag[element] == null) flag[element] = false;
+    });
+
+    return Scaffold(
+      appBar: MyAppBar(
+        appBar: AppBar(),
+        deleteCat: categoryProvider.deleteCategory,
+        deleteCategoryTransaction:
+            transactionProvider.deleteCategoryTransaction,
+        selectAll: selectAll,
+        startDeleteSelected: _startdeleteSelected,
+      ),
+      body: (categoryProvider.noOfCategory == 0)
+          ? Container()
+          : Container(
+              padding: EdgeInsets.only(top: 10, left: 10, right: 10),
+              child: GridView.builder(
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 200,
+                  childAspectRatio: 3 / 2,
+                  mainAxisSpacing: 20,
+                  crossAxisSpacing: 20,
+                ),
+                itemBuilder: (ctx, index) {
+                  return InkWell(
+                    onLongPress: () {
+                      setState(() {
+                        flag[allCategories[index]] =
+                            !flag[allCategories[index]];
+                        if (flag[allCategories[index]])
+                          _noOfSelected += 1;
+                        else
+                          _noOfSelected -= 1;
+                      });
+                    },
+                    onTap: () {
+                      if (_noOfSelected > 0) {
+                        setState(() {
+                          flag[allCategories[index]] =
+                              !flag[allCategories[index]];
+                          if (flag[allCategories[index]])
+                            _noOfSelected += 1;
+                          else
+                            _noOfSelected -= 1;
+                        });
+                      } else {
+                        Navigator.of(context).pushNamed(
+                          Category.routeName,
+                          arguments: allCategories[index],
+                        );
+                      }
+                    },
+                    splashColor: Colors.green,
+                    borderRadius: BorderRadius.circular(15),
+                    child: Container(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: <Widget>[
+                          Text(
+                            //localCategories[index],
+                            allCategories[index],
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                            ),
+                          ),
+                          Text(
+                            '\u{20B9}${((categoryWiseTransaction[allCategories[index]] == null) ? 0 : categoryWiseTransaction[allCategories[index]]['total'])}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            '${((categoryWiseTransaction[allCategories[index]] == null) ? 0 : categoryWiseTransaction[allCategories[index]]['length'])} transactions',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          )
+                        ],
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            if (flag[allCategories[index]] == false ||
+                                flag[allCategories[index]] == null) ...[
+                              Colors.tealAccent.withOpacity(0.4),
+                              Colors.teal
+                            ] else ...[
+                              Colors.black54,
+                              Colors.black12,
+                            ]
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  );
+                },
+                itemCount: allCategories.length,
+              ),
+            ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: FloatingActionButton(
+          child: Icon(Icons.add),
+          onPressed: () => showModalBottomSheet(
+                context: context,
+                builder: (_) {
+                  return NewCategory();
+                },
+              )),
+    );
+  }
+}
+
+class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final AppBar appBar;
+  final Function deleteCat,
+      deleteCategoryTransaction,
+      selectAll,
+      startDeleteSelected;
+
+  MyAppBar({
+    this.appBar,
+    this.deleteCat,
+    this.deleteCategoryTransaction,
+    this.selectAll,
+    this.startDeleteSelected,
+  });
+
+  @override
+  Size get preferredSize => new Size.fromHeight(appBar.preferredSize.height);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: const Text('Overview'),
       actions: <Widget>[
         FlatButton.icon(
             onPressed: () {
-              setState(() {
-                selectAll();
-              });
+              selectAll();
             },
             icon: Container(
               decoration: BoxDecoration(
@@ -140,95 +252,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
             label: Text('')),
         FlatButton.icon(
-            onPressed: () {
-              _startdeleteSelected(context);
-            },
-            icon: Icon(Icons.delete),
-            label: Text(''))
-      ],
-    );
-
-    print('build category page');
-    return Scaffold(
-      appBar: appBar,
-      body: Container(
-        padding: EdgeInsets.only(top: 10, left: 10, right: 10),
-        child: GridView.builder(
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 200,
-            childAspectRatio: 3 / 2,
-            mainAxisSpacing: 20,
-            crossAxisSpacing: 20,
-          ),
-          itemBuilder: (ctx, index) {
-            return InkWell(
-              onDoubleTap: () {
-                setState(() {
-                  flag[localCategories[index]] = !flag[localCategories[index]];
-                });
-              },
-              onLongPress: () {
-                setState(() {
-                  flag[localCategories[index]] = !flag[localCategories[index]];
-                });
-              },
-              onTap: () {},
-              splashColor: Colors.black54,
-              borderRadius: BorderRadius.circular(15),
-              child: Container(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    Text(
-                      localCategories[index],
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    Text(
-                      '\u{20B9}${(total[localCategories[index]])}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '${(noOfTransactions[localCategories[index]])} transactions',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    )
-                  ],
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      if (flag[localCategories[index]] == false) ...[
-                        Colors.tealAccent.withOpacity(0.7),
-                        Colors.tealAccent
-                      ] else ...[
-                        Colors.black12,
-                        Colors.black54
-                      ]
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-              ),
-            );
+          onPressed: () {
+            startDeleteSelected(context, deleteCat, deleteCategoryTransaction);
           },
-          itemCount: localCategories.length,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.add),
-          onPressed: () => showModalBottomSheet(
-                context: context,
-                builder: (_) {
-                  return NewCategory(_addCategory, _updateScreen);
-                },
-              )),
+          icon: Icon(
+            Icons.delete,
+            color: Colors.white,
+          ),
+          label: Text(''),
+        )
+      ],
     );
   }
 }

@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/transaction.dart';
 
 class NewCategory extends StatelessWidget {
   final _ccontroller = TextEditingController();
-  final Function _addCat, _updateScreen;
-
-  NewCategory(this._addCat, this._updateScreen);
-
-  void updateCategory() {
-    String cat = _ccontroller.text;
-    if (cat.isEmpty) return;
-    _addCat(cat);
-
-    _updateScreen();
-  }
 
   @override
   Widget build(BuildContext context) {
+    final categoryProviders =
+        Provider.of<CategoryListProvider>(context, listen: false);
+    final Function addCat = categoryProviders.addCategory;
     return Card(
       child: Container(
         height: MediaQuery.of(context).viewInsets.bottom + 70,
@@ -44,7 +39,10 @@ class NewCategory extends StatelessWidget {
                 color: Colors.purple,
                 textColor: Colors.white,
                 onPressed: () {
-                  updateCategory();
+                  if (_ccontroller.text.isNotEmpty) {
+                    addCat(_ccontroller.text);
+                    Navigator.pop(context);
+                  }
                 },
               ),
             )

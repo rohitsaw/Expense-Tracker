@@ -1,17 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../models/transaction.dart';
+import 'dart:async';
 
 class TransactionList extends StatelessWidget {
-  final List<Transaction> transactions;
-  final Function deleteTx;
+  final provider;
+  TransactionList(this.provider);
 
-  final scrollController;
+  @override
+  Widget build(BuildContext context) {
+    int txlength = provider.noOfTransactions;
+    return (txlength > 0)
+        ? TransactionListSub(provider)
+        : Center(
+            child: Text(
+              "Add Some Transactions",
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 25,
+              ),
+            ),
+          );
+  }
+}
 
-  TransactionList(this.transactions, this.deleteTx, this.scrollController);
+class TransactionListSub extends StatelessWidget {
+  final ScrollController _scrollController = ScrollController();
 
-  void _startDeleteTx(BuildContext ctx, int id) {
+  final provider;
+  TransactionListSub(this.provider);
+
+  void _startDeleteTx(BuildContext ctx, int id, deleteTx) {
     showDialog(
         context: ctx,
         barrierDismissible: false,
@@ -41,75 +60,77 @@ class TransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return (transactions.length <= 0)
-        ? Center(
-            child: Text(
-              "Add Some Transactions",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 25,
-              ),
-            ),
-          )
-        : ListView.builder(
-            //reverse: true,
-            controller: scrollController,
-            itemBuilder: (ctx, index) {
-              return Card(
-                elevation: 5,
-                margin: EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 5,
-                ),
-                child: InkWell(
-                  onTap: () {},
-                  splashColor: Colors.black54,
-                  child: ListTile(
-                    isThreeLine: true,
-                    leading: CircleAvatar(
-                      radius: 30,
-                      child: Padding(
-                        padding: EdgeInsets.all(6),
-                        child: FittedBox(
-                          child: Text('\u{20B9}${transactions[index].amount}'),
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      '${transactions[index].category}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          '${transactions[index].title}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black54,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            '${DateFormat.yMMMd().format(transactions[index].date)}',
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete),
-                      color: Colors.red,
-                      onPressed: () =>
-                          _startDeleteTx(context, transactions[index].id),
-                    ),
+    Timer(
+      Duration(milliseconds: 700),
+      () => _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut),
+    );
+
+    final Function deleteTx = provider.deleteTrasaction;
+
+    return ListView.builder(
+      //reverse: true,
+      controller: _scrollController,
+      itemBuilder: (ctx, index) {
+        return Card(
+          elevation: 5,
+          margin: EdgeInsets.symmetric(
+            vertical: 8,
+            horizontal: 5,
+          ),
+          child: InkWell(
+            onTap: () {},
+            splashColor: Colors.black54,
+            child: ListTile(
+              isThreeLine: true,
+              leading: CircleAvatar(
+                radius: 30,
+                child: Padding(
+                  padding: EdgeInsets.all(6),
+                  child: FittedBox(
+                    child: Text(
+                        '\u{20B9}${provider.getAllTransactions[index].amount}'),
                   ),
                 ),
-              );
-            },
-            itemCount: transactions.length,
-          );
+              ),
+              title: Text(
+                '${provider.getAllTransactions[index].getCategory}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    '${provider.getAllTransactions[index].title}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '${DateFormat.yMMMd().format(provider.getAllTransactions[index].date)}',
+                    ),
+                  ),
+                ],
+              ),
+              trailing: IconButton(
+                icon: Icon(Icons.delete),
+                color: Colors.red,
+                onPressed: () => _startDeleteTx(
+                    context, provider.getAllTransactions[index].id, deleteTx),
+              ),
+            ),
+          ),
+        );
+      },
+      //itemCount: transactions.length,
+      itemCount: provider.noOfTransactions,
+    );
   }
 }

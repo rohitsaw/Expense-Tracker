@@ -3,23 +3,17 @@ import 'package:flutter/material.dart';
 import './chart_bar.dart';
 
 class Chart extends StatelessWidget {
-  final List<Map<String, int>> lastSevenDays;
-
-  final Map<int, String> mp = {
-    1: 'Mon',
-    2: 'Tue',
-    3: 'Wed',
-    4: 'Thu',
-    5: 'Fri',
-    6: 'Sat',
-    7: 'Sun',
-  };
-
-  final int totalLastSevenDays;
-  Chart(this.lastSevenDays, this.totalLastSevenDays);
+  final provider;
+  Chart(this.provider);
 
   @override
   Widget build(BuildContext context) {
+    List<Map<String, dynamic>> lastSevenDays = provider.lastSevenDays;
+    int total = 0;
+    lastSevenDays.forEach((element) {
+      total += element['amount'];
+    });
+
     return Card(
       //margin: EdgeInsets.all(10),
       elevation: 10,
@@ -31,9 +25,9 @@ class Chart extends StatelessWidget {
               return Flexible(
                 fit: FlexFit.tight,
                 child: ChartBar(
-                  mp[each['day']],
+                  each['day'],
                   each['amount'],
-                  totalLastSevenDays,
+                  total,
                 ),
               );
             }).toList()),

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:personal_expenses/providers/transaction.dart';
+import 'package:provider/provider.dart';
+//import 'package:multiselect_formfield/multiselect_formfield.dart';
 
 class NewTransaction extends StatefulWidget {
-  final Function addTx;
-  final List<String> categories;
-
-  NewTransaction(this.addTx, this.categories);
-
   @override
   _NewTransactionState createState() => _NewTransactionState();
 }
@@ -16,19 +14,27 @@ class _NewTransactionState extends State<NewTransaction> {
   var _selectedDate = DateTime.now();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
+  final _amountFocusNode = FocusNode();
   String _category;
 
-  void _submitData() {
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  void _submitData(Function addTx) {
     final title = _titleController.text;
     final amount = _amountController.text;
 
-    if (title.isEmpty || amount.isEmpty || (_category == null)) {
-      return;
-    }
     try {
-      widget.addTx(title, int.parse(amount), _selectedDate, _category);
+      addTx(title, int.parse(amount), _selectedDate, _category);
       Navigator.of(context).pop();
     } catch (e) {
+      print(e);
       return;
     }
   }
@@ -36,7 +42,7 @@ class _NewTransactionState extends State<NewTransaction> {
   void _presentDatePicker() {
     showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDate,
       firstDate: DateTime(2019),
       lastDate: DateTime.now(),
     ).then((pickedDate) {
@@ -52,87 +58,130 @@ class _NewTransactionState extends State<NewTransaction> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Container(
-        padding: EdgeInsets.all(10),
-        child: Column(
-          //crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            TextField(
-              decoration: InputDecoration(labelText: 'Title'),
-              controller: _titleController,
-              onSubmitted: (_) => _submitData(),
-            ),
-            TextField(
-              decoration: InputDecoration(labelText: 'Amount'),
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [WhitelistingTextInputFormatter.digitsOnly],
-              onSubmitted: (_) => _submitData(),
-            ),
-            Container(
-                child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                    'Selected date :- ${DateFormat('d/M/y').format(_selectedDate)}'),
-                Container(
-                  padding: EdgeInsets.only(top: 5),
-                  child: FlatButton(
-                    textColor: Colors.blue,
-                    child: Text(
-                      'Change Date',
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+    final transactionsProvider =
+        Provider.of<TransactionListProvider>(context, listen: false);
+    final categoryProvider =
+        Provider.of<CategoryListProvider>(context, listen: true);
+    final allCategories = categoryProvider.allCategory;
+    final Function addTransaction = transactionsProvider.addTransaction;
+    return (allCategories.length == 0)
+        ? Container(
+            child: CircularProgressIndicator(),
+          )
+        : SingleChildScrollView(
+            child: Container(
+              height: MediaQuery.of(context).size.height * 0.5,
+              padding: EdgeInsets.all(6),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    TextFormField(
+                      autofocus: true,
+                      controller: _titleController,
+                      decoration: InputDecoration(labelText: 'Title'),
+                      validator: (value) {
+                        if (value.isEmpty || value == null)
+                          return 'Please Enter Title';
+                        return null;
+                      },
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_amountFocusNode);
+                      },
+                    ),
+                    TextFormField(
+                      focusNode: _amountFocusNode,
+                      controller: _amountController,
+                      decoration: InputDecoration(labelText: 'Amount'),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        WhitelistingTextInputFormatter.digitsOnly
+                      ],
+                      validator: (value) {
+                        if (value.isEmpty ||
+                            value == null ||
+                            int.parse(value) <= 0) return 'Please Enter Amount';
+                        return null;
+                      },
+                    ),
+                    Container(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(
+                            'Selected date :- ${DateFormat('d/M/y').format(_selectedDate)}',
+                          ),
+                          Container(
+                            padding: EdgeInsets.only(top: 5),
+                            child: FlatButton(
+                              textColor: Colors.blue,
+                              child: Text(
+                                'Change Date',
+                                textAlign: TextAlign.start,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              onPressed: _presentDatePicker,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    onPressed: _presentDatePicker,
-                  ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: <Widget>[
+                        Focus(
+                          child: Container(
+                            width: 200,
+                            child: DropdownButtonFormField<String>(
+                                //isExpanded: true,
+                                validator: (value) {
+                                  if (value == null) return 'Select category';
+                                  return null;
+                                },
+                                value: _category,
+                                hint: Text(
+                                  'Select Category',
+                                ),
+                                icon: Icon(Icons.arrow_downward),
+                                elevation: 16,
+                                style: TextStyle(
+                                  color: Colors.deepPurple,
+                                ),
+                                items: (allCategories).map((String each) {
+                                  return DropdownMenuItem<String>(
+                                    value: each,
+                                    child: Text(each),
+                                  );
+                                }).toList(),
+                                onChanged: (String newValue) {
+                                  _category = newValue;
+                                }),
+                          ),
+                        ),
+                        Container(
+                          child: RaisedButton(
+                            child: Text('Add Transaction'),
+                            color: Colors.purple,
+                            textColor: Colors.white,
+                            onPressed: () {
+                              var form = _formKey.currentState;
+                              if (form.validate()) {
+                                form.save();
+                                _submitData(addTransaction);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            )),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Container(
-                  child: DropdownButton<String>(
-                      value: _category,
-                      hint: Text('Select Category'),
-                      icon: Icon(Icons.arrow_downward),
-                      elevation: 16,
-                      style: TextStyle(
-                        color: Colors.deepPurple,
-                      ),
-                      underline: Container(
-                        height: 2,
-                        color: Colors.deepPurple,
-                      ),
-                      items: (widget.categories).map((String each) {
-                        return DropdownMenuItem<String>(
-                          value: each,
-                          child: Text(each),
-                        );
-                      }).toList(),
-                      onChanged: (String newValue) {
-                        setState(() {
-                          _category = newValue;
-                        });
-                      }),
-                ),
-                Container(
-                  child: RaisedButton(
-                    child: Text('Add Transaction'),
-                    color: Colors.purple,
-                    textColor: Colors.white,
-                    onPressed: _submitData,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ],
-        ),
-      ),
-    );
+          );
   }
 }
