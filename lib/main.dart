@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'Flutter Demo',
+        title: 'Expense Tracker',
         theme: ThemeData(
           primarySwatch: Colors.purple,
           accentColor: Colors.amber,
