@@ -26,7 +26,8 @@ class NewCategory extends StatelessWidget {
                 autofocus: true,
                 decoration: InputDecoration(labelText: 'Create New Category'),
                 inputFormatters: [
-                  WhitelistingTextInputFormatter(RegExp("[a-zA-Z0-9]"))
+                  //WhitelistingTextInputFormatter(RegExp("[a-zA-Z0-9]"))
+                  FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9]"))
                 ],
               ),
             ),
