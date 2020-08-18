@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+import 'package:flutter/material.dart';
+
 class TransactionCategory {
   final String category;
   TransactionCategory(this.category);
@@ -212,7 +214,7 @@ class TransactionListProvider with ChangeNotifier {
   }
 
   // add new transaction
-  void addTransaction(
+  Future<void> addTransaction(
       String title, int amount, DateTime date, String category) async {
     final Database db = await _database;
     int id = await db.insert(
@@ -226,22 +228,19 @@ class TransactionListProvider with ChangeNotifier {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
 
-    final res = await db.query("txn", where: "id = ?", whereArgs: [id]);
-
-    if (res.isNotEmpty) {
-      Transaction txn = Transaction(
-          id: res.first['id'],
-          title: res.first['title'],
-          amount: res.first['amount'],
-          date: DateTime.parse(res.first['date']),
-          category: TransactionCategory(res.first['category']));
-      _allTransactions.add(txn);
-    }
+    Transaction txn = Transaction(
+      id: id,
+      title: title,
+      amount: amount,
+      date: date,
+      category: TransactionCategory(category),
+    );
+    _allTransactions.add(txn);
     notifyListeners();
   }
 
   // delete a transaction by id
-  void deleteTrasaction(int id) async {
+  Future<void> deleteTrasaction(int id) async {
     final db = await _database;
     await db.delete(
       'txn',

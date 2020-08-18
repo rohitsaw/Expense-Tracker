@@ -116,27 +116,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final provider =
-        Provider.of<TransactionListProvider>(context, listen: true);
+    //final provider =
+    //    Provider.of<TransactionListProvider>(context, listen: true);
 
-    final appBar = AppBar(
-      title: Text(widget.title),
-      actions: <Widget>[
-        FlatButton.icon(
-            textColor: Colors.tealAccent,
-            onPressed: () {
-              Navigator.pushNamed(context, CategoryScreen.routeName);
-            },
-            label: Text('Details'),
-            //icon: Icon(Icons.add_circle_outline),
-            icon: Icon(Icons.arrow_forward)),
-      ],
-    );
+    final appBar = const MyAppBar();
 
     final availHeight = (MediaQuery.of(context).size.height -
         MediaQuery.of(context).padding.top -
         appBar.preferredSize.height);
-    print("build home page with isLoading $_isLoading");
+        
     return Scaffold(
         appBar: appBar,
         body: (_isLoading)
@@ -149,11 +137,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       Container(
                         height: (availHeight * 0.3),
                         padding: EdgeInsets.all(10),
-                        child: Chart(provider),
+                        child: Chart(),
                       ),
                       Container(
                         height: (availHeight * 0.7),
-                        child: TransactionList(provider),
+                        child: TransactionList(),
                       ),
                     ],
                   ),
@@ -167,4 +155,27 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ));
   }
+}
+
+class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const MyAppBar();
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text('Expense Tracker'),
+      actions: <Widget>[
+        FlatButton.icon(
+            textColor: Colors.tealAccent,
+            onPressed: () {
+              Navigator.pushNamed(context, CategoryScreen.routeName);
+            },
+            label: Text('categories'),
+            //icon: Icon(Icons.add_circle_outline),
+            icon: Icon(Icons.arrow_forward)),
+      ],
+    );
+  }
+
+  @override
+  Size get preferredSize => new Size.fromHeight(50.0);
 }

@@ -5,6 +5,10 @@ import 'package:personal_expenses/providers/transaction.dart';
 import 'package:provider/provider.dart';
 //import 'package:multiselect_formfield/multiselect_formfield.dart';
 
+import '../widgets/transaction_list.dart';
+
+//import 'dart:io';
+
 class NewTransaction extends StatefulWidget {
   @override
   _NewTransactionState createState() => _NewTransactionState();
@@ -26,12 +30,20 @@ class _NewTransactionState extends State<NewTransaction> {
     super.dispose();
   }
 
-  void _submitData(Function addTx) {
+  void _submitData(Function addTx) async {
     final title = _titleController.text;
     final amount = _amountController.text;
 
     try {
-      addTx(title, int.parse(amount), _selectedDate, _category);
+      await addTx(title, int.parse(amount), _selectedDate, _category);
+      if (listkey.currentState != null) {
+        int index = Provider.of<TransactionListProvider>(context, listen: false)
+                .noOfTransactions -
+            1;
+        listkey.currentState
+            .insertItem(index, duration: Duration(milliseconds: 300));
+      }
+
       Navigator.of(context).pop();
     } catch (e) {
       print(e);
