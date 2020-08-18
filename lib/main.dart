@@ -169,7 +169,7 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
             onPressed: () {
               Navigator.pushNamed(context, CategoryScreen.routeName);
             },
-            label: Text('categories'),
+            label: Text('Categories'),
             //icon: Icon(Icons.add_circle_outline),
             icon: Icon(Icons.arrow_forward)),
       ],
