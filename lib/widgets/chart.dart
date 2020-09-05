@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import './chart_bar.dart';
 
+import '../providers/transaction.dart';
+
 class Chart extends StatelessWidget {
-  final provider;
-  Chart(this.provider);
+  //final provider;
+  //Chart(this.provider);
 
   @override
   Widget build(BuildContext context) {
+    final provider =
+        Provider.of<TransactionListProvider>(context, listen: true);
     List<Map<String, dynamic>> lastSevenDays = provider.lastSevenDays;
     int total = 0;
     lastSevenDays.forEach((element) {

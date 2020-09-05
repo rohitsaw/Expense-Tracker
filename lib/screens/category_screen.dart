@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-// import 'package:personal_expenses/main.dart';
-//import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/transaction.dart';
 
+import '../widgets/drawer.dart';
 import '../widgets/new_category.dart';
 import '../screens/each_category.dart';
+
+
 
 class CategoryScreen extends StatefulWidget {
   static const routeName = '/categoryScreen';
@@ -104,6 +105,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     });
 
     return Scaffold(
+      drawer: const MyDrawer(),
       appBar: MyAppBar(
         appBar: AppBar(),
         deleteCat: categoryProvider.deleteCategory,
@@ -235,7 +237,7 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text('Overview'),
+      title: const Text('Categories'),
       actions: <Widget>[
         FlatButton.icon(
             onPressed: () {

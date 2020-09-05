@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+import 'package:flutter/material.dart';
+
 class TransactionCategory {
   final String category;
   TransactionCategory(this.category);
@@ -31,6 +33,7 @@ class Transaction {
 class CategoryListProvider with ChangeNotifier {
   List<TransactionCategory> _allCategory = [];
   dynamic _database;
+  bool _isload = false;
 
   int get noOfCategory {
     return _allCategory.length;
@@ -43,7 +46,11 @@ class CategoryListProvider with ChangeNotifier {
 
   // populate in memory Category list
   Future<void> loadCategories() async {
-    _allCategory = await fetchAndLoadCat;
+    if (_isload == false) {
+      print("categogy loading");
+      _allCategory = await fetchAndLoadCat;
+      _isload = true;
+    }
   }
 
   // fetch and return category list from database
@@ -107,6 +114,8 @@ class CategoryListProvider with ChangeNotifier {
 class TransactionListProvider with ChangeNotifier {
   List<Transaction> _allTransactions = [];
   dynamic _database;
+  bool _isload = false;
+
   // getter for all transaction list
   List<Transaction> get getAllTransactions {
     return [..._allTransactions];
@@ -114,7 +123,11 @@ class TransactionListProvider with ChangeNotifier {
 
   // populate in memory transactions list
   Future<void> loadTransactions() async {
-    _allTransactions = await fetchAndLoadTxn;
+    if (_isload == false) {
+      print("transactions loading");
+      _allTransactions = await fetchAndLoadTxn;
+      _isload = true;
+    }
   }
 
   // fetch and returns all transactions list from database
@@ -141,7 +154,7 @@ class TransactionListProvider with ChangeNotifier {
         date: DateTime.parse(maps[i]['date']),
         category: TransactionCategory(maps[i]['category']),
       );
-    });
+    }).reversed.toList();
   }
 
   // getter for last seven days transaction list
@@ -212,7 +225,7 @@ class TransactionListProvider with ChangeNotifier {
   }
 
   // add new transaction
-  void addTransaction(
+  Future<void> addTransaction(
       String title, int amount, DateTime date, String category) async {
     final Database db = await _database;
     int id = await db.insert(
@@ -226,22 +239,19 @@ class TransactionListProvider with ChangeNotifier {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
 
-    final res = await db.query("txn", where: "id = ?", whereArgs: [id]);
-
-    if (res.isNotEmpty) {
-      Transaction txn = Transaction(
-          id: res.first['id'],
-          title: res.first['title'],
-          amount: res.first['amount'],
-          date: DateTime.parse(res.first['date']),
-          category: TransactionCategory(res.first['category']));
-      _allTransactions.add(txn);
-    }
+    Transaction txn = Transaction(
+      id: id,
+      title: title,
+      amount: amount,
+      date: date,
+      category: TransactionCategory(category),
+    );
+    _allTransactions.insert(0, txn);
     notifyListeners();
   }
 
   // delete a transaction by id
-  void deleteTrasaction(int id) async {
+  Future<void> deleteTrasaction(int id) async {
     final db = await _database;
     await db.delete(
       'txn',
