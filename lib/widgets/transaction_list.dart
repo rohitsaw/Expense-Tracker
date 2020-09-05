@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'dart:async';
+//import 'dart:async';
 
 import '../providers/transaction.dart';
 
 class TransactionList extends StatelessWidget {
+  final listkey;
+  TransactionList(this.listkey);
+
   @override
   Widget build(BuildContext context) {
     final txlength = Provider.of<TransactionListProvider>(context, listen: true)
         .noOfTransactions;
     return (txlength > 0)
-        ? TransactionListSub()
+        ? TransactionListSub(listkey)
         : const Center(
             child: Text(
               "Add Some Transactions",
@@ -25,27 +28,26 @@ class TransactionList extends StatelessWidget {
   }
 }
 
-GlobalKey<AnimatedListState> listkey = GlobalKey<AnimatedListState>();
-
 class TransactionListSub extends StatefulWidget {
-  TransactionListSub();
+  final listkey;
+  TransactionListSub(this.listkey);
   @override
   _TransactionListSubState createState() => _TransactionListSubState();
 }
 
 class _TransactionListSubState extends State<TransactionListSub>
     with TickerProviderStateMixin {
-  ScrollController _scrollController;
+  //ScrollController _scrollController;
 
   @override
   void initState() {
-    _scrollController = ScrollController();
+    //_scrollController = ScrollController();
     super.initState();
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    //_scrollController.dispose();
     super.dispose();
   }
 
@@ -53,17 +55,10 @@ class _TransactionListSubState extends State<TransactionListSub>
   Widget build(BuildContext context) {
     final provider =
         Provider.of<TransactionListProvider>(context, listen: true);
-    Timer(
-      Duration(milliseconds: 700),
-      () => _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut),
-    );
 
     return AnimatedList(
-      key: listkey,
-      controller: _scrollController,
+      key: widget.listkey,
+      //controller: _scrollController,
       initialItemCount: provider.noOfTransactions,
       itemBuilder: (ctx, index, animation) {
         return SizeTransition(
@@ -106,7 +101,7 @@ class TransactionItem extends StatelessWidget {
                         ),
                       );
                     },
-                    duration: Duration(milliseconds: 700),
+                    duration: Duration(milliseconds: 500),
                   );
                   deleteTx(id);
                 },

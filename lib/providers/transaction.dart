@@ -33,6 +33,7 @@ class Transaction {
 class CategoryListProvider with ChangeNotifier {
   List<TransactionCategory> _allCategory = [];
   dynamic _database;
+  bool _isload = false;
 
   int get noOfCategory {
     return _allCategory.length;
@@ -45,7 +46,11 @@ class CategoryListProvider with ChangeNotifier {
 
   // populate in memory Category list
   Future<void> loadCategories() async {
-    _allCategory = await fetchAndLoadCat;
+    if (_isload == false) {
+      print("categogy loading");
+      _allCategory = await fetchAndLoadCat;
+      _isload = true;
+    }
   }
 
   // fetch and return category list from database
@@ -109,6 +114,8 @@ class CategoryListProvider with ChangeNotifier {
 class TransactionListProvider with ChangeNotifier {
   List<Transaction> _allTransactions = [];
   dynamic _database;
+  bool _isload = false;
+
   // getter for all transaction list
   List<Transaction> get getAllTransactions {
     return [..._allTransactions];
@@ -116,7 +123,11 @@ class TransactionListProvider with ChangeNotifier {
 
   // populate in memory transactions list
   Future<void> loadTransactions() async {
-    _allTransactions = await fetchAndLoadTxn;
+    if (_isload == false) {
+      print("transactions loading");
+      _allTransactions = await fetchAndLoadTxn;
+      _isload = true;
+    }
   }
 
   // fetch and returns all transactions list from database
@@ -143,7 +154,7 @@ class TransactionListProvider with ChangeNotifier {
         date: DateTime.parse(maps[i]['date']),
         category: TransactionCategory(maps[i]['category']),
       );
-    });
+    }).reversed.toList();
   }
 
   // getter for last seven days transaction list
@@ -235,7 +246,7 @@ class TransactionListProvider with ChangeNotifier {
       date: date,
       category: TransactionCategory(category),
     );
-    _allTransactions.add(txn);
+    _allTransactions.insert(0, txn);
     notifyListeners();
   }
 

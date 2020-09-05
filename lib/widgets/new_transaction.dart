@@ -5,11 +5,12 @@ import 'package:personal_expenses/providers/transaction.dart';
 import 'package:provider/provider.dart';
 //import 'package:multiselect_formfield/multiselect_formfield.dart';
 
-import '../widgets/transaction_list.dart';
-
-//import 'dart:io';
 
 class NewTransaction extends StatefulWidget {
+
+  final listkey;
+  NewTransaction(this.listkey);
+
   @override
   _NewTransactionState createState() => _NewTransactionState();
 }
@@ -36,15 +37,14 @@ class _NewTransactionState extends State<NewTransaction> {
 
     try {
       await addTx(title, int.parse(amount), _selectedDate, _category);
-      if (listkey.currentState != null) {
-        int index = Provider.of<TransactionListProvider>(context, listen: false)
-                .noOfTransactions -
-            1;
-        listkey.currentState
-            .insertItem(index, duration: Duration(milliseconds: 300));
-      }
-
       Navigator.of(context).pop();
+      if (widget.listkey.currentState != null) {
+        /*      int index = Provider.of<TransactionListProvider>(context, listen: false)
+                .noOfTransactions -
+            1;  */
+        widget.listkey.currentState
+            .insertItem(0, duration: Duration(milliseconds: 500));
+      }
     } catch (e) {
       print(e);
       return;
@@ -76,6 +76,7 @@ class _NewTransactionState extends State<NewTransaction> {
         Provider.of<CategoryListProvider>(context, listen: true);
     final allCategories = categoryProvider.allCategory;
     final Function addTransaction = transactionsProvider.addTransaction;
+
     return (allCategories.length == 0)
         ? Container(
             child: CircularProgressIndicator(),
