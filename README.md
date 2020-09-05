@@ -6,7 +6,7 @@ https://play.google.com/store/apps/details?id=com.rohitsaw.personal_expenses
 A day to day Expenses Tracker app.
 
 
-<table>
+<table style="background-color:#42f5ec;" >
 <tr>
         <td>
             <img src="https://github.com/rohitsaw/Expense-Tracker/blob/media/images/1.jpg" width="60%" >
